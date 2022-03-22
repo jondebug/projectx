@@ -50,7 +50,7 @@ AHAT_STREAM_PORT = 23941
 LEFT_FRONT_STREAM_PORT = 23942
 RIGHT_FRONT_STREAM_PORT = 23943
 
-HOST = '169.254.189.82' #'169.254.189.82' #'192.168.1.242'
+HOST = '132.69.207.145' #'169.254.189.82' #'192.168.1.242'
 #'192.168.1.92'
 
 HundredsOfNsToMilliseconds = 1e-4
@@ -289,7 +289,7 @@ if __name__ == '__main__':
             cv2.imshow('test depth', (depth).astype(np.uint16))
 
             # Save colored point clouds as ply files
-            output_path = "C:/Users/halea/Documents/hl2-rm/frame" + str(save_one) + ".ply"
+            output_path = r"C:\Users\jonathan_pc\Desktop\projectx\py\22_3_22___13_10\ahat" + str(save_one) + ".ply"
             save_one += 1
             save_ply(output_path, points, rgb, pv2world_transform)
 
