@@ -2,7 +2,7 @@
 
 #define DBG_ENABLE_INFO_LOGGING 1
 #define DBG_ENABLE_ERROR_LOGGING 1
-#define DBG_ENABLE_VERBOSE_LOGGING 0
+#define DBG_ENABLE_VERBOSE_LOGGING 1
 
 using namespace winrt::Windows::Networking::Sockets;
 using namespace winrt::Windows::Storage::Streams;
@@ -289,9 +289,8 @@ bool Streamer::SendExtrinsics(
 
     m_writeInProgress = false;
 
-#if DBG_ENABLE_VERBOSE_LOGGING
+
     OutputDebugStringW(L"Streamer::SendExtrinsics: Extrinsics sent!\n");
-#endif
     
     return b_successful_write;
 }
@@ -481,7 +480,7 @@ void Streamer::Send(
         m_writer.WriteInt32(rowStride);
 
         WriteMatrix4x4(rig2worldTransform);
-
+        Sleep(80);
         m_writer.WriteBytes(sensorByteData);
 
 #if DBG_ENABLE_VERBOSE_LOGGING

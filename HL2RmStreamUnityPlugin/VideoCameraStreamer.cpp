@@ -55,7 +55,7 @@ IAsyncAction VideoCameraStreamer::InitializeAsync(
                     knownDesc.Width(), knownDesc.Height(), knownDesc.FrameRate());
                 OutputDebugStringW(msgBuffer);
 #endif
-                if ((knownDesc.Width() == kImageWidth)) // && (std::round(knownDesc.FrameRate()) == 15))
+                if ((knownDesc.Width() == kImageWidth) && (std::round(knownDesc.FrameRate()) == 15))
                 {
                     profile = knownProfile;
                     desc = knownDesc;
@@ -351,7 +351,7 @@ void VideoCameraStreamer::SendFrame(
         m_writer.WriteSingle(oy);
 
         WriteMatrix4x4(PVtoWorldtransform);
-
+        Sleep(80);
         m_writer.WriteBytes(imageBufferAsVector);
 
 #if DBG_ENABLE_VERBOSE_LOGGING
