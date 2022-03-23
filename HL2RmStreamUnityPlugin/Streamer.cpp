@@ -480,7 +480,6 @@ void Streamer::Send(
         m_writer.WriteInt32(rowStride);
 
         WriteMatrix4x4(rig2worldTransform);
-        Sleep(80);
         m_writer.WriteBytes(sensorByteData);
 
 #if DBG_ENABLE_VERBOSE_LOGGING
