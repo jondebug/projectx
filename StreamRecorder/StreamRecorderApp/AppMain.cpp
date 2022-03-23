@@ -34,7 +34,7 @@ enum class ButtonID
 	DEPTH_LONG_THROW
 }*/
 // Note that concurrent access to AHAT and Long Throw is currently not supported
-std::vector<ResearchModeSensorType> AppMain::kEnabledRMStreamTypes = { ResearchModeSensorType::DEPTH_LONG_THROW };
+std::vector<ResearchModeSensorType> AppMain::kEnabledRMStreamTypes = { ResearchModeSensorType::DEPTH_AHAT };
 /* Supported not-ResearchMode streams:
 {
 	PV,  // RGB
@@ -112,7 +112,7 @@ void AppMain::Update()
 	const XMVECTOR headUp = m_mixedReality.GetHeadUpDirection();
 	const XMVECTOR headRight = XMVector3Cross(headUp, -headForward);
 
-	m_menu.SetPosition(headPosition + headForward * 0.5f);
+	m_menu.SetPosition(headPosition + headForward * 0.5f + XMVectorSet(0, -0.30f, 0.0f, 0)); //move menu down 3 times its height (menu height = 0.f)
 	m_menu.SetRotation(-headForward, XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
 	m_menu.Update(frameDelta, m_hands);
 
