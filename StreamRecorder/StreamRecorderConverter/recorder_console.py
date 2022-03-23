@@ -113,6 +113,7 @@ class DevicePortalBrowser(object):
     def connect(self, address, username, password):
         print("Connecting to HoloLens Device Portal...")
         self.url = "http://{}".format(address)
+        ssl._create_default_https_context = ssl._create_unverified_context
         password_manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
         password_manager.add_password(None, self.url, username, password)
         handler = urllib.request.HTTPBasicAuthHandler(password_manager)
