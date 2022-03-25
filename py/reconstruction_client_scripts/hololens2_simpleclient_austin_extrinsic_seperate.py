@@ -79,10 +79,14 @@ class FrameReceiverThread(threading.Thread):
         self.socket = None
         self.find_extrinsics = find_extrinsics
         self.lut = None
+        self.lut_counter = 0
 
     def get_extrinsics_from_socket(self, imgWidth, imgHeight):
         # read the header in chunks
         reply = self.recvall(self.header_size)
+
+        self.lut_counter +=1
+        str_counter = "_" + str(self.lut_counter)
 
         if not reply:
             print('ERROR: Failed to receive data from stream.')
@@ -92,10 +96,26 @@ class FrameReceiverThread(threading.Thread):
         header = self.header_data(*data)
 
         size_of_float = 4
-        lut_bytes = imgHeight * imgWidth * 3 * size_of_float
+        lut_bytes = imgHeight * imgWidth * 3 * size_of_float #TODO: why is this so large?
 
         lut_data = self.recvall(lut_bytes)
 
+
+        # write ahat extrinsics to file labeled by timestamps
+        # ========================================
+        parent_folder_path = "C:/Users/jonathan_pc/Desktop/projectx/py/25_3_22/"
+        child_folder_path = parent_folder_path + "error_folder/"
+        str_timestamp = str(header.Timestamp)
+        if AHAT_STREAM_PORT == self.port:
+            child_folder_path = parent_folder_path + "ahat_lut_extrinsics/"
+
+            f_header = open(child_folder_path + "extr_header_" + str_timestamp + str_counter, "wb")
+            f_data = open(child_folder_path + "extr_lut_data_" + str_timestamp + str_counter, "wb")
+
+        f_header.write(reply)
+        f_data.write(image_data)
+
+        # ========================================
         return header, lut_data
 
     def get_data_from_socket(self):
@@ -106,7 +126,7 @@ class FrameReceiverThread(threading.Thread):
             print('ERROR: Failed to receive data from stream.')
             return
 
-        data = struct.unpack(self.header_format, reply)
+        data = struct.unpack(self.header_format, reply) #TODO: use this function to recreate the header data
         header = self.header_data(*data)
 
         # read the image in chunks
@@ -114,6 +134,29 @@ class FrameReceiverThread(threading.Thread):
 
         image_data = self.recvall(image_size_bytes)
 
+        # write data and header to files labeled by timestamps
+        # ========================================
+        parent_folder_path = "C:/Users/jonathan_pc/Desktop/projectx/py/25_3_22/"  #pv/" + str(pv_timestamp) + "rgb.png
+        child_folder_path = parent_folder_path + "error_folder/"
+        str_timestamp = str(header.Timestamp)
+
+        if VIDEO_STREAM_PORT == self.port:
+            child_folder_path = parent_folder_path + "PV/"
+
+            f_header = open(child_folder_path + "pv_header_" + str_timestamp, "wb")
+            f_data = open(child_folder_path + "pv_data_" + str_timestamp, "wb")
+
+        elif AHAT_STREAM_PORT == self.port:
+            child_folder_path = parent_folder_path + "Depth AHat/"
+
+            f_header = open(child_folder_path + "ahat_header_" + str_timestamp, "wb")
+            f_data = open(child_folder_path + "ahat_data_" + str_timestamp, "wb")
+
+        f_header.write(reply)
+        f_data.write(image_data)
+
+        #cv2.imwrite(child_folder_path + str_timestamp, image_data)
+        # ========================================
         return header, image_data
 
     def recvall(self, size):
@@ -158,7 +201,7 @@ class VideoReceiverThread(FrameReceiverThread):
             self.latest_header, image_data = self.get_data_from_socket()
             self.latest_frame = np.frombuffer(image_data, dtype=np.uint8).reshape((self.latest_header.ImageHeight,
                                                                                    self.latest_header.ImageWidth,
-                                                                                   self.latest_header.PixelStride))
+                                                                                   self.latest_header.PixelStride)) #TODO use this to recreate image from binary file
 
     def get_mat_from_header(self, header):
         pv_to_world_transform = np.array(header[7:24]).reshape((4, 4)).T
@@ -210,15 +253,15 @@ if __name__ == '__main__':
     video_receiver.start_socket()
 
     ahat_extr_receiver = AhatReceiverThread(HOST, AHAT_STREAM_PORT, RM_EXTRINSICS_HEADER_FORMAT, RM_EXTRINSICS_HEADER,
-                                            True)
+                                            True)#"True" means we want to save extrinsics
     ahat_extr_receiver.start_socket()
 
-    lf_extr_receiver = SpatialCamsReceiverThread(HOST, LEFT_FRONT_STREAM_PORT, RM_EXTRINSICS_HEADER_FORMAT,
-                                                 RM_EXTRINSICS_HEADER, True)
+    #lf_extr_receiver = SpatialCamsReceiverThread(HOST, LEFT_FRONT_STREAM_PORT, RM_EXTRINSICS_HEADER_FORMAT,
+     #                                            RM_EXTRINSICS_HEADER, True)
     # lf_extr_receiver.start_socket()
 
-    rf_extr_receiver = SpatialCamsReceiverThread(HOST, RIGHT_FRONT_STREAM_PORT, RM_EXTRINSICS_HEADER_FORMAT,
-                                                 RM_EXTRINSICS_HEADER, True)
+    #rf_extr_receiver = SpatialCamsReceiverThread(HOST, RIGHT_FRONT_STREAM_PORT, RM_EXTRINSICS_HEADER_FORMAT,
+      #                                           RM_EXTRINSICS_HEADER, True)
     # rf_extr_receiver.start_socket()
 
     video_receiver.start_listen()
@@ -234,12 +277,13 @@ if __name__ == '__main__':
     save_one = 0
 
     while True:
-        if np.any(video_receiver.latest_frame):
-            cv2.imshow('Photo Video Camera Stream', video_receiver.latest_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        # if np.any(video_receiver.latest_frame):
+        #     cv2.imshow('Photo Video Camera Stream', video_receiver.latest_frame)
+        #     if cv2.waitKey(1) & 0xFF == ord('q'):
+        #         break
 
         if ahat_receiver and np.any(ahat_receiver.latest_frame):
+            continue    #completely bypass all ahat proccessing
             #
             depth_img = ahat_receiver.latest_frame
             depth_hdr = ahat_receiver.latest_header
