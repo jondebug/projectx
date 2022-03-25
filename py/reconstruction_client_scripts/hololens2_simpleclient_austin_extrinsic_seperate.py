@@ -112,8 +112,8 @@ class FrameReceiverThread(threading.Thread):
             f_header = open(child_folder_path + "extr_header_" + str_timestamp + str_counter, "wb")
             f_data = open(child_folder_path + "extr_lut_data_" + str_timestamp + str_counter, "wb")
 
-        f_header.write(reply)
-        f_data.write(image_data)
+            f_header.write(reply)
+            f_data.write(image_data)
 
         # ========================================
         return header, lut_data
@@ -136,7 +136,7 @@ class FrameReceiverThread(threading.Thread):
 
         # write data and header to files labeled by timestamps
         # ========================================
-        parent_folder_path = "C:/Users/jonathan_pc/Desktop/projectx/py/25_3_22/"  #pv/" + str(pv_timestamp) + "rgb.png
+        parent_folder_path = "C:/Users/jonathan_pc/Desktop/projectx/py/25_3_22/"
         child_folder_path = parent_folder_path + "error_folder/"
         str_timestamp = str(header.Timestamp)
 
