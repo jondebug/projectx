@@ -50,7 +50,7 @@ AHAT_STREAM_PORT = 23941
 LEFT_FRONT_STREAM_PORT = 23942
 RIGHT_FRONT_STREAM_PORT = 23943
 
-HOST = '169.254.189.82'  # '169.254.189.82' #'192.168.1.242'
+HOST = '132.69.207.145'  # '169.254.189.82' #'192.168.1.242'
 # '192.168.1.92'
 
 HundredsOfNsToMilliseconds = 1e-4
@@ -249,6 +249,7 @@ class SpatialCamsReceiverThread(FrameReceiverThread):
 
 
 if __name__ == '__main__':
+    print("connecting to hololense at ip address: " + str(HOST))
     video_receiver = VideoReceiverThread(HOST)
     video_receiver.start_socket()
 
@@ -354,70 +355,70 @@ if __name__ == '__main__':
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        elif ahat_extr_receiver and np.any(ahat_extr_receiver.lut):
-            ahat_extr_receiver.socket.close()
-            ahat_receiver = AhatReceiverThread(HOST, AHAT_STREAM_PORT, RM_STREAM_HEADER_FORMAT, RM_FRAME_STREAM_HEADER)
-
-            ahat_receiver.extrinsics_header = ahat_extr_receiver.extrinsics_header
-            ahat_receiver.lut = ahat_extr_receiver.lut
-
-            depth_hdr = ahat_receiver.extrinsics_header
-            rig2cam_transform = np.array([
-                depth_hdr.rig2camTransformM11, depth_hdr.rig2camTransformM12, depth_hdr.rig2camTransformM13,
-                depth_hdr.rig2camTransformM14,
-                depth_hdr.rig2camTransformM21, depth_hdr.rig2camTransformM22, depth_hdr.rig2camTransformM23,
-                depth_hdr.rig2camTransformM24,
-                depth_hdr.rig2camTransformM31, depth_hdr.rig2camTransformM32, depth_hdr.rig2camTransformM33,
-                depth_hdr.rig2camTransformM34,
-                depth_hdr.rig2camTransformM41, depth_hdr.rig2camTransformM42, depth_hdr.rig2camTransformM43,
-                depth_hdr.rig2camTransformM44]).reshape(4, 4)
-
-            ahat_extr_receiver = None
-
-            ahat_receiver.start_socket()
-            ahat_receiver.start_listen()
-
-        if lf_receiver and np.any(lf_receiver.latest_frame):
-            cv2.imshow('Left Front Camera Stream', lf_receiver.latest_frame)
-
-            if start_recording:
-                color = cv2.cvtColor(lf_receiver.latest_frame, cv2.COLOR_GRAY2BGR)
-                front_left_vid.write(color)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-        elif lf_extr_receiver and np.any(lf_extr_receiver.lut):
-            lf_extr_receiver.socket.close()
-            lf_receiver = SpatialCamsReceiverThread(HOST, LEFT_FRONT_STREAM_PORT, RM_STREAM_HEADER_FORMAT,
-                                                    RM_FRAME_STREAM_HEADER)
-
-            lf_receiver.extrinsics_header = lf_extr_receiver.extrinsics_header
-            lf_receiver.lut = lf_extr_receiver.lut
-            lf_extr_receiver = None
-
-            lf_receiver.start_socket()
-            lf_receiver.start_listen()
-
-        if rf_receiver and np.any(rf_receiver.latest_frame):
-            cv2.imshow('Right Front Camera Stream', rf_receiver.latest_frame)
-
-            if start_recording:
-                color = cv2.cvtColor(rf_receiver.latest_frame, cv2.COLOR_GRAY2BGR)
-                front_right_vid.write(color)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-        elif rf_extr_receiver and np.any(rf_extr_receiver.lut):
-            rf_extr_receiver.socket.close()
-            rf_receiver = SpatialCamsReceiverThread(HOST, RIGHT_FRONT_STREAM_PORT, RM_STREAM_HEADER_FORMAT,
-                                                    RM_FRAME_STREAM_HEADER)
-
-            rf_receiver.extrinsics_header = rf_extr_receiver.extrinsics_header
-            rf_receiver.lut = rf_extr_receiver.lut
-            rf_extr_receiver = None
-
-            rf_receiver.start_socket()
-            rf_receiver.start_listen()
+        # elif ahat_extr_receiver and np.any(ahat_extr_receiver.lut):
+        #     ahat_extr_receiver.socket.close()
+        #     ahat_receiver = AhatReceiverThread(HOST, AHAT_STREAM_PORT, RM_STREAM_HEADER_FORMAT, RM_FRAME_STREAM_HEADER)
+        #
+        #     ahat_receiver.extrinsics_header = ahat_extr_receiver.extrinsics_header
+        #     ahat_receiver.lut = ahat_extr_receiver.lut
+        #
+        #     depth_hdr = ahat_receiver.extrinsics_header
+        #     rig2cam_transform = np.array([
+        #         depth_hdr.rig2camTransformM11, depth_hdr.rig2camTransformM12, depth_hdr.rig2camTransformM13,
+        #         depth_hdr.rig2camTransformM14,
+        #         depth_hdr.rig2camTransformM21, depth_hdr.rig2camTransformM22, depth_hdr.rig2camTransformM23,
+        #         depth_hdr.rig2camTransformM24,
+        #         depth_hdr.rig2camTransformM31, depth_hdr.rig2camTransformM32, depth_hdr.rig2camTransformM33,
+        #         depth_hdr.rig2camTransformM34,
+        #         depth_hdr.rig2camTransformM41, depth_hdr.rig2camTransformM42, depth_hdr.rig2camTransformM43,
+        #         depth_hdr.rig2camTransformM44]).reshape(4, 4)
+        #
+        #     ahat_extr_receiver = None
+        #
+        #     ahat_receiver.start_socket()
+        #     ahat_receiver.start_listen()
+        #
+        # if lf_receiver and np.any(lf_receiver.latest_frame):
+        #     cv2.imshow('Left Front Camera Stream', lf_receiver.latest_frame)
+        #
+        #     if start_recording:
+        #         color = cv2.cvtColor(lf_receiver.latest_frame, cv2.COLOR_GRAY2BGR)
+        #         front_left_vid.write(color)
+        #
+        #     if cv2.waitKey(1) & 0xFF == ord('q'):
+        #         break
+        # elif lf_extr_receiver and np.any(lf_extr_receiver.lut):
+        #     lf_extr_receiver.socket.close()
+        #     lf_receiver = SpatialCamsReceiverThread(HOST, LEFT_FRONT_STREAM_PORT, RM_STREAM_HEADER_FORMAT,
+        #                                             RM_FRAME_STREAM_HEADER)
+        #
+        #     lf_receiver.extrinsics_header = lf_extr_receiver.extrinsics_header
+        #     lf_receiver.lut = lf_extr_receiver.lut
+        #     lf_extr_receiver = None
+        #
+        #     lf_receiver.start_socket()
+        #     lf_receiver.start_listen()
+        #
+        # if rf_receiver and np.any(rf_receiver.latest_frame):
+        #     cv2.imshow('Right Front Camera Stream', rf_receiver.latest_frame)
+        #
+        #     if start_recording:
+        #         color = cv2.cvtColor(rf_receiver.latest_frame, cv2.COLOR_GRAY2BGR)
+        #         front_right_vid.write(color)
+        #
+        #     if cv2.waitKey(1) & 0xFF == ord('q'):
+        #         break
+        # elif rf_extr_receiver and np.any(rf_extr_receiver.lut):
+        #     rf_extr_receiver.socket.close()
+        #     rf_receiver = SpatialCamsReceiverThread(HOST, RIGHT_FRONT_STREAM_PORT, RM_STREAM_HEADER_FORMAT,
+        #                                             RM_FRAME_STREAM_HEADER)
+        #
+        #     rf_receiver.extrinsics_header = rf_extr_receiver.extrinsics_header
+        #     rf_receiver.lut = rf_extr_receiver.lut
+        #     rf_extr_receiver = None
+        #
+        #     rf_receiver.start_socket()
+        #     rf_receiver.start_listen()
 
         # if cv2.waitKey(1) & 0xFF == ord('r'):
         #     start_recording = not start_recording
