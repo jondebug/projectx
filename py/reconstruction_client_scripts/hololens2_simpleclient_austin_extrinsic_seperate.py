@@ -16,6 +16,8 @@ np.warnings.filterwarnings('ignore')
 # see https://docs.python.org/2/library/struct.html#format-characters
 VIDEO_STREAM_HEADER_FORMAT = "@qIIII20f"
 
+PARENT_FOLDER_PATH = r"C:\Users\Hololens\Desktop\projectx\py\reconstruction_client_scripts\output_folder\29_03_22"
+
 VIDEO_FRAME_STREAM_HEADER = namedtuple(
     'SensorFrameStreamHeader',
     'Timestamp ImageWidth ImageHeight PixelStride RowStride fx fy ox oy '
@@ -85,7 +87,7 @@ class FrameReceiverThread(threading.Thread):
         # read the header in chunks
         reply = self.recvall(self.header_size)
 
-        self.lut_counter +=1
+        self.lut_counter += 1
         str_counter = "_" + str(self.lut_counter)
 
         if not reply:
@@ -103,17 +105,18 @@ class FrameReceiverThread(threading.Thread):
 
         # write ahat extrinsics to file labeled by timestamps
         # ========================================
-        parent_folder_path = "C:/Users/jonathan_pc/Desktop/projectx/py/25_3_22/"
-        child_folder_path = parent_folder_path + "error_folder/"
-        str_timestamp = str(header.Timestamp)
+        child_folder_path = PARENT_FOLDER_PATH + "error_folder/"
+        str_timestamp = "000" #does not have a timestamp
         if AHAT_STREAM_PORT == self.port:
-            child_folder_path = parent_folder_path + "ahat_lut_extrinsics/"
+            child_folder_path = PARENT_FOLDER_PATH + r"\ahat_lut_extrinsics"
 
-            f_header = open(child_folder_path + "extr_header_" + str_timestamp + str_counter, "wb")
-            f_data = open(child_folder_path + "extr_lut_data_" + str_timestamp + str_counter, "wb")
+            with open(child_folder_path + r"\extr_lut_" + str_timestamp + str_counter + "header_", 'wb') as f_header:
+                f_header.write(reply)
+            with open(child_folder_path + r"\extr_lut_" + str_timestamp + str_counter + "data_", "wb") as f_data:
+                f_data.write(lut_data)
 
-            f_header.write(reply)
-            f_data.write(image_data)
+            #f_header.write(reply)
+            #f_data.write(lut_data)
 
         # ========================================
         return header, lut_data
@@ -136,24 +139,33 @@ class FrameReceiverThread(threading.Thread):
 
         # write data and header to files labeled by timestamps
         # ========================================
-        parent_folder_path = "C:/Users/jonathan_pc/Desktop/projectx/py/25_3_22/"
-        child_folder_path = parent_folder_path + "error_folder/"
-        str_timestamp = str(header.Timestamp)
+        child_folder_path = PARENT_FOLDER_PATH + "error_folder/"
+        str_timestamp = "_" + str(header.Timestamp)
 
         if VIDEO_STREAM_PORT == self.port:
-            child_folder_path = parent_folder_path + "PV/"
+            child_folder_path = PARENT_FOLDER_PATH + r"\PV"
 
-            f_header = open(child_folder_path + "pv_header_" + str_timestamp, "wb")
-            f_data = open(child_folder_path + "pv_data_" + str_timestamp, "wb")
+            #f_header = open(child_folder_path + "pv_header_" + str_timestamp, "wb")
+            #f_data = open(child_folder_path + "pv_data_" + str_timestamp, "wb")
+            with open(child_folder_path + r"\pv_" + str_timestamp + "header_", 'wb') as f_header:
+                f_header.write(reply)
+            with open(child_folder_path + r"\pv_" + str_timestamp + "data_", "wb") as f_data:
+                f_data.write(image_data)
+
 
         elif AHAT_STREAM_PORT == self.port:
-            child_folder_path = parent_folder_path + "Depth AHat/"
+            child_folder_path = PARENT_FOLDER_PATH + r"\Depth AHat"
 
-            f_header = open(child_folder_path + "ahat_header_" + str_timestamp, "wb")
-            f_data = open(child_folder_path + "ahat_data_" + str_timestamp, "wb")
+            #f_header = open(child_folder_path + "ahat_header_" + str_timestamp, "wb")
+            #f_data = open(child_folder_path + "ahat_data_" + str_timestamp, "wb")
+            with open(child_folder_path + r"\ahat" + str_timestamp + "header_", 'wb') as f_header:
+                f_header.write(reply)
+            with open(child_folder_path + r"\ahat" + str_timestamp + "data_", "wb") as f_data:
+                f_data.write(image_data)
 
-        f_header.write(reply)
-        f_data.write(image_data)
+
+        #f_header.write(reply)
+        #f_data.write(image_data)
 
         #cv2.imwrite(child_folder_path + str_timestamp, image_data)
         # ========================================
@@ -179,6 +191,7 @@ class FrameReceiverThread(threading.Thread):
         print('INFO: Socket connected to ' + self.host + ' on port ' + str(self.port))
 
     def start_listen(self):
+        print("starting to listen on" + str(self.port))
         t = threading.Thread(target=self.listen)
         t.start()
 
@@ -218,7 +231,9 @@ class AhatReceiverThread(FrameReceiverThread):
                 if not np.any(self.lut):
                     self.extrinsics_header, lut_data = self.get_extrinsics_from_socket(512, 512)
                     self.lut = np.frombuffer(lut_data, dtype=np.float32).reshape((512 * 512, 3))
+                    print("got LUT!")
             else:
+                #print("getting ahat image")
                 self.latest_header, image_data = self.get_data_from_socket()
                 self.latest_frame = np.frombuffer(image_data, dtype=np.uint16).reshape(
                     (self.latest_header.ImageHeight, self.latest_header.ImageWidth))
@@ -282,79 +297,103 @@ if __name__ == '__main__':
         #     cv2.imshow('Photo Video Camera Stream', video_receiver.latest_frame)
         #     if cv2.waitKey(1) & 0xFF == ord('q'):
         #         break
+        if not ahat_receiver and ahat_extr_receiver and np.any(ahat_extr_receiver.lut):
+            print("closing ahat_extr_socket")
+            ahat_extr_receiver.socket.close()
+            ahat_receiver = AhatReceiverThread(HOST, AHAT_STREAM_PORT, RM_STREAM_HEADER_FORMAT, RM_FRAME_STREAM_HEADER)
 
-        if ahat_receiver and np.any(ahat_receiver.latest_frame):
-            continue    #completely bypass all ahat proccessing
-            #
-            depth_img = ahat_receiver.latest_frame
-            depth_hdr = ahat_receiver.latest_header
+            ahat_receiver.extrinsics_header = ahat_extr_receiver.extrinsics_header
+            ahat_receiver.lut = ahat_extr_receiver.lut
 
-            pv_img = video_receiver.latest_frame
-            pv_hdr = video_receiver.latest_header
+            depth_hdr = ahat_receiver.extrinsics_header
+            rig2cam_transform = np.array([
+                depth_hdr.rig2camTransformM11, depth_hdr.rig2camTransformM12, depth_hdr.rig2camTransformM13,
+                depth_hdr.rig2camTransformM14,
+                depth_hdr.rig2camTransformM21, depth_hdr.rig2camTransformM22, depth_hdr.rig2camTransformM23,
+                depth_hdr.rig2camTransformM24,
+                depth_hdr.rig2camTransformM31, depth_hdr.rig2camTransformM32, depth_hdr.rig2camTransformM33,
+                depth_hdr.rig2camTransformM34,
+                depth_hdr.rig2camTransformM41, depth_hdr.rig2camTransformM42, depth_hdr.rig2camTransformM43,
+                depth_hdr.rig2camTransformM44]).reshape(4, 4)
 
-            cv2.imshow('Depth Camera Stream', depth_img)
+            ahat_extr_receiver = None
+            print("starting ahat_receiver_socket")
+            ahat_receiver.start_socket()
+            ahat_receiver.start_listen()
 
-            # Get xyz points in camera space
-            points = get_points_in_cam_space(depth_img, ahat_receiver.lut)
 
-            pv2world_transform = np.array([
-                pv_hdr.PVtoWorldtransformM11, pv_hdr.PVtoWorldtransformM12, pv_hdr.PVtoWorldtransformM13,
-                pv_hdr.PVtoWorldtransformM14,
-                pv_hdr.PVtoWorldtransformM21, pv_hdr.PVtoWorldtransformM22, pv_hdr.PVtoWorldtransformM23,
-                pv_hdr.PVtoWorldtransformM24,
-                pv_hdr.PVtoWorldtransformM31, pv_hdr.PVtoWorldtransformM32, pv_hdr.PVtoWorldtransformM33,
-                pv_hdr.PVtoWorldtransformM34,
-                pv_hdr.PVtoWorldtransformM41, pv_hdr.PVtoWorldtransformM42, pv_hdr.PVtoWorldtransformM43,
-                pv_hdr.PVtoWorldtransformM44]).reshape(4, 4)
-
-            depth_hdr = ahat_receiver.latest_header
-            rig2world_transform = np.array([
-                depth_hdr.rig2worldTransformM11, depth_hdr.rig2worldTransformM12, depth_hdr.rig2worldTransformM13,
-                depth_hdr.rig2worldTransformM14,
-                depth_hdr.rig2worldTransformM21, depth_hdr.rig2worldTransformM22, depth_hdr.rig2worldTransformM23,
-                depth_hdr.rig2worldTransformM24,
-                depth_hdr.rig2worldTransformM31, depth_hdr.rig2worldTransformM32, depth_hdr.rig2worldTransformM33,
-                depth_hdr.rig2worldTransformM34,
-                depth_hdr.rig2worldTransformM41, depth_hdr.rig2worldTransformM42, depth_hdr.rig2worldTransformM43,
-                depth_hdr.rig2worldTransformM44]).reshape(4, 4)
-
-            xyz, cam2world_transform = cam2world(points, rig2cam_transform, rig2world_transform)
-
-            focal_length = [pv_hdr.fx, pv_hdr.fy]
-            principal_point = [pv_hdr.ox, pv_hdr.oy]
-
-            # Project from depth to pv going via world space
-            rgb, depth = project_on_pv(
-                xyz, pv_img, pv2world_transform,
-                focal_length, principal_point)
-
-            # Project depth on virtual pinhole camera and save corresponding
-            # rgb image inside <workspace>/pinhole_projection folder
-            # Create virtual pinhole camera
-            scale = 1
-            width = 320 * scale
-            height = 288 * scale
-            proj_focal_length = 200 * scale
-            intrinsic_matrix = np.array([[proj_focal_length, 0, width / 2.],
-                                         [0, proj_focal_length, height / 2.],
-                                         [0, 0, 1.]])
-            rgb_proj, depth = project_on_depth(
-                points, rgb, intrinsic_matrix, width, height)
-
-            cv2.imshow('test rgb', (rgb_proj).astype(np.uint8))
-            depth = (depth * DEPTH_SCALING_FACTOR).astype(np.uint16)
-            cv2.imshow('test depth', (depth).astype(np.uint16))
-
-            # Save colored point clouds as ply files
-            output_path = "C:/Users/halea/Documents/hl2-rm/frame" + str(save_one) + ".ply"
-            save_one += 1
-            save_ply(output_path, points, rgb, pv2world_transform)
-
-            cv2.imwrite(output_path + "rgb.png", rgb_proj)
-            cv2.imwrite(output_path + "depth.png", (depth).astype(np.uint16))
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+        # if ahat_receiver and np.any(ahat_receiver.latest_frame):
+        #     continue    #completely bypass all ahat proccessing
+        #     #
+        #     depth_img = ahat_receiver.latest_frame
+        #     depth_hdr = ahat_receiver.latest_header
+        #
+        #     pv_img = video_receiver.latest_frame
+        #     pv_hdr = video_receiver.latest_header
+        #
+        #     cv2.imshow('Depth Camera Stream', depth_img)
+        #
+        #     # Get xyz points in camera space
+        #     points = get_points_in_cam_space(depth_img, ahat_receiver.lut)
+        #
+        #     pv2world_transform = np.array([
+        #         pv_hdr.PVtoWorldtransformM11, pv_hdr.PVtoWorldtransformM12, pv_hdr.PVtoWorldtransformM13,
+        #         pv_hdr.PVtoWorldtransformM14,
+        #         pv_hdr.PVtoWorldtransformM21, pv_hdr.PVtoWorldtransformM22, pv_hdr.PVtoWorldtransformM23,
+        #         pv_hdr.PVtoWorldtransformM24,
+        #         pv_hdr.PVtoWorldtransformM31, pv_hdr.PVtoWorldtransformM32, pv_hdr.PVtoWorldtransformM33,
+        #         pv_hdr.PVtoWorldtransformM34,
+        #         pv_hdr.PVtoWorldtransformM41, pv_hdr.PVtoWorldtransformM42, pv_hdr.PVtoWorldtransformM43,
+        #         pv_hdr.PVtoWorldtransformM44]).reshape(4, 4)
+        #
+        #     depth_hdr = ahat_receiver.latest_header
+        #     rig2world_transform = np.array([
+        #         depth_hdr.rig2worldTransformM11, depth_hdr.rig2worldTransformM12, depth_hdr.rig2worldTransformM13,
+        #         depth_hdr.rig2worldTransformM14,
+        #         depth_hdr.rig2worldTransformM21, depth_hdr.rig2worldTransformM22, depth_hdr.rig2worldTransformM23,
+        #         depth_hdr.rig2worldTransformM24,
+        #         depth_hdr.rig2worldTransformM31, depth_hdr.rig2worldTransformM32, depth_hdr.rig2worldTransformM33,
+        #         depth_hdr.rig2worldTransformM34,
+        #         depth_hdr.rig2worldTransformM41, depth_hdr.rig2worldTransformM42, depth_hdr.rig2worldTransformM43,
+        #         depth_hdr.rig2worldTransformM44]).reshape(4, 4)
+        #
+        #     xyz, cam2world_transform = cam2world(points, rig2cam_transform, rig2world_transform)
+        #
+        #     focal_length = [pv_hdr.fx, pv_hdr.fy]
+        #     principal_point = [pv_hdr.ox, pv_hdr.oy]
+        #
+        #     # Project from depth to pv going via world space
+        #     rgb, depth = project_on_pv(
+        #         xyz, pv_img, pv2world_transform,
+        #         focal_length, principal_point)
+        #
+        #     # Project depth on virtual pinhole camera and save corresponding
+        #     # rgb image inside <workspace>/pinhole_projection folder
+        #     # Create virtual pinhole camera
+        #     scale = 1
+        #     width = 320 * scale
+        #     height = 288 * scale
+        #     proj_focal_length = 200 * scale
+        #     intrinsic_matrix = np.array([[proj_focal_length, 0, width / 2.],
+        #                                  [0, proj_focal_length, height / 2.],
+        #                                  [0, 0, 1.]])
+        #     rgb_proj, depth = project_on_depth(
+        #         points, rgb, intrinsic_matrix, width, height)
+        #
+        #     cv2.imshow('test rgb', (rgb_proj).astype(np.uint8))
+        #     depth = (depth * DEPTH_SCALING_FACTOR).astype(np.uint16)
+        #     cv2.imshow('test depth', (depth).astype(np.uint16))
+        #
+        #     # Save colored point clouds as ply files
+        #     output_path = "C:/Users/halea/Documents/hl2-rm/frame" + str(save_one) + ".ply"
+        #     save_one += 1
+        #     save_ply(output_path, points, rgb, pv2world_transform)
+        #
+        #     cv2.imwrite(output_path + "rgb.png", rgb_proj)
+        #     cv2.imwrite(output_path + "depth.png", (depth).astype(np.uint16))
+        #
+        #     if cv2.waitKey(1) & 0xFF == ord('q'):
+        #         break
         # elif ahat_extr_receiver and np.any(ahat_extr_receiver.lut):
         #     ahat_extr_receiver.socket.close()
         #     ahat_receiver = AhatReceiverThread(HOST, AHAT_STREAM_PORT, RM_STREAM_HEADER_FORMAT, RM_FRAME_STREAM_HEADER)
