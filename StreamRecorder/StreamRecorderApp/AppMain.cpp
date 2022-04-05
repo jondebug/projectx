@@ -34,7 +34,7 @@ enum class ButtonID
 	DEPTH_LONG_THROW
 }*/
 // Note that concurrent access to AHAT and Long Throw is currently not supported
-std::vector<ResearchModeSensorType> AppMain::kEnabledRMStreamTypes = { ResearchModeSensorType::DEPTH_AHAT };
+std::vector<ResearchModeSensorType> AppMain::kEnabledRMStreamTypes = {};
 /* Supported not-ResearchMode streams:
 {
 	PV,  // RGB
@@ -61,11 +61,11 @@ AppMain::AppMain() :
 	m_mixedReality.EnableSurfaceMapping();
 	m_mixedReality.EnableQRCodeTracking();
 
-	const float rootMenuHeight = 0.10f;
-	XMVECTOR mainButtonSize = XMVectorSet(0.04f, 0.04f, 0.015f, 0.0f);
+	const float rootMenuHeight = 0.01f;
+	XMVECTOR mainButtonSize = XMVectorSet(0.025f, 0.025f, 0.0109f, 0.0f);
 
 	m_menu.HideTitleBar();
-	m_menu.SetSize(XMVectorSet(0.15f, rootMenuHeight, 0.01f, 1.0f));
+	m_menu.SetSize(XMVectorSet(0.01f, rootMenuHeight, 0.01f, 1.0f));
 
 	m_menu.AddButton(make_shared<FloatingSlateButton>(XMVectorSet(-0.025f, 0.0f, 0.0f, 1.0f), mainButtonSize, XMVectorSet(0.0f, 0.5f, 0.0f, 1.0f), (unsigned)ButtonID::Start, this, "Start"));
 	m_menu.AddButton(make_shared<FloatingSlateButton>(XMVectorSet(0.025f, 0.0f, 0.0f, 1.0f), mainButtonSize, XMVectorSet(0.5f, 0.0f, 0.0f, 1.0f), (unsigned)ButtonID::Stop, this, "Stop"));
@@ -112,7 +112,7 @@ void AppMain::Update()
 	const XMVECTOR headUp = m_mixedReality.GetHeadUpDirection();
 	const XMVECTOR headRight = XMVector3Cross(headUp, -headForward);
 
-	m_menu.SetPosition(headPosition + headForward * 0.5f + XMVectorSet(0, -0.30f, 0.0f, 0)); //move menu down 3 times its height (menu height = 0.f)
+	m_menu.SetPosition(headPosition + headForward * 0.5f + XMVectorSet(0.08, 0.08f, 0.05f, 0.05f)); //move menu down 3 times its height (menu height = 0.f)
 	m_menu.SetRotation(-headForward, XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
 	m_menu.Update(frameDelta, m_hands);
 
